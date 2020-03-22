@@ -93,7 +93,7 @@ router.post('/logout', async (req, res) => {
 })
 
 /**
- * 获取用户个人资料
+ * 获取当前登录人的资料
  */
 router.get('/personaldata', async (req, res) => {
   if (req.cookies.userIds) {
@@ -144,7 +144,7 @@ router.get('/data', async (req, res) => {
 /**
  * 修改个人资料
  */
-router.post('/edit', async (req, res) => {
+router.post('/edit/profile', async (req, res) => {
   const userIds = req.cookies.userIds;
   const avatar = req.body.avatar;
   const username = req.body.username;
@@ -167,6 +167,37 @@ router.post('/edit', async (req, res) => {
     }).catch(error => {
       console.log(error);
     })
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
+    res.json(data);
+  }
+})
+
+/**
+ * 修改密码
+ */
+router.post('/edit/password', async (req, res) => {
+  const userIds = req.cookies.userIds;
+  const oldPassword = req.body.oldPassword;
+  const newPassword = req.body.newPassword;
+
+  if (userIds) {
+    User.findOne({ ids: userIds }).then(res => {
+      if (res.password !== oldPassword) {
+        data.msg = '密码错误！';
+        data.state = 202;
+      } else {
+        res.password = newPassword;
+        res.save();
+        data.msg = '修改成功！';
+      }
+    }).then(() => {
+      res.json(data);
+    }).catch(error => {
+      console.log(error);
+    })
+
   } else {
     data.msg = '未登录';
     data.state = 302;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const localDate = require('../utils/getCurrentDate');
 
 const User = new mongoose.Schema({
   // 手机号、密码、ids、用户名、性别、个性签名、职业、公司、用户创建时间
@@ -17,6 +18,7 @@ const User = new mongoose.Schema({
 
   avatar: {
     type: String,
+    default: 'http://127.0.0.1:8000/avatar/default.png',
   },
 
   sex: {
@@ -39,9 +41,14 @@ const User = new mongoose.Schema({
     default: '',
   },
 
+  admin: {
+    type: Boolean,
+    default: false
+  },
+
   createdDate: {
-    type: Date,
-    default: Date.now
+    type: String,
+    default: localDate.localDate(),
   }
 });
 

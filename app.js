@@ -31,6 +31,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/user', require('./routes/user'));
 app.use('/article', require('./routes/article'));
 app.use('/category',require('./routes/category'));
+app.use('/img', require('./routes/img'));
 
 // 连接数据库
 mongoose.connect(URL, {
