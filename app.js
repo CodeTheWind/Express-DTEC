@@ -42,6 +42,6 @@ mongoose.connect(URL, {
     console.log('Failure of database connection...');
   } else {
     console.log('Successful database connection...');
-    app.listen(8000);
+    app.listen(80);
   }
 });

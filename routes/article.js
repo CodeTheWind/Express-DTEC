@@ -114,23 +114,37 @@ router.get('/details', async (req, res) => {
  * 发表文章
  */
 router.post('/post', async (req, res) => {
+  const userIds = req.cookies.userIds;
 
-  new Article({
-    title: req.body.title,
-    des: req.body.des,
-    content: req.body.content,
-    typeId: req.body.typeId,
-    typeName: req.body.typeName,
-    tag: req.body.tag,
-    userIds: req.body.userIds,
-  }).save().then(res => {
-    data.msg = '发表成功！';
-    data.articleIds = res.ids;
-  }).then(() => {
+  if (userIds) {
+    if (userIds === req.body.userIds) {
+
+      new Article({
+        title: req.body.title,
+        des: req.body.des,
+        content: req.body.content,
+        typeId: req.body.typeId,
+        typeName: req.body.typeName,
+        tag: req.body.tag,
+        userIds
+      }).save().then(res => {
+        data.msg = '发表成功！';
+        data.articleIds = res.ids;
+      }).then(() => {
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
+      })
+    } else {
+      data.msg = '发布失败，不是作者本人！';
+      data.state = 202;
+      res.json(data);
+    }
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
     res.json(data);
-  }).catch(error => {
-    console.log(error);
-  })
+  }
 })
 
 /**
@@ -156,7 +170,43 @@ router.post('/delete', async (req, res) => {
 /**
  * 编辑文章
  */
-router.post('/update', async (req, res) => { })
+router.post('/update', async (req, res) => {
+  const userIds = req.cookies.userIds;
+  const title = req.body.title;
+  const des = req.body.des;
+  const content = req.body.content;
+  const typeId = req.body.typeId;
+  const typeName = req.body.typeName;
+  const tag = req.body.tag;
+
+  if (userIds) {
+    if (userIds === req.body.userIds) {
+      Article.updateOne({ ids: req.body.ids }, {
+        title, des, content, typeId, typeName, tag
+      }).then(res => {
+        if (res) {
+          data.msg = '修改成功';
+          data.ids = req.body.ids;
+        } else {
+          data.msg = '修改失败';
+          data.state = 202;
+        }
+      }).then(() => {
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
+      })
+    } else {
+      data.msg = '修改失败，修改的不是自己的文章！';
+      data.state = 202;
+      res.json(data);
+    }
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
+    res.json(data);
+  }
+})
 
 /**
  * 点赞文章

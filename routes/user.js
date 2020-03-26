@@ -146,7 +146,6 @@ router.get('/data', async (req, res) => {
  */
 router.post('/edit/profile', async (req, res) => {
   const userIds = req.cookies.userIds;
-  const avatar = req.body.avatar;
   const username = req.body.username;
   const profession = req.body.profession;
   const company = req.body.company;
@@ -154,13 +153,41 @@ router.post('/edit/profile', async (req, res) => {
 
   if (userIds) {
     User.updateOne({ ids: userIds }, {
-      avatar, username, profession, company, motto
+      username, profession, company, motto
     }).then(res => {
       if (res) {
         data.msg = '修改成功';
       } else {
         data.msg = '修改失败';
         data.state = 1;
+      }
+    }).then(() => {
+      res.json(data);
+    }).catch(error => {
+      console.log(error);
+    })
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
+    res.json(data);
+  }
+})
+
+/**
+ * 修改用户头像
+ */
+router.post('/edit/avatar', async (req, res) => {
+  const userIds = req.cookies.userIds;
+  const avatar = req.body.avatar;
+
+  if (userIds) {
+    User.updateOne({ ids: userIds }, { avatar }).then(res => {
+      if (res) {
+        data.msg = '修改成功';
+        data.state = 200;
+      } else {
+        data.msg = '修改失败';
+        data.state = 202;
       }
     }).then(() => {
       res.json(data);
