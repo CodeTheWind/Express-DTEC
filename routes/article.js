@@ -74,6 +74,56 @@ router.get('/list', async (req, res) => {
 })
 
 /**
+ * 获取阅读量排名前 7 的文章
+ */
+router.get('/hotlist', async (req, res) => {
+  const count = 7;
+  Article.find().limit(count).sort({
+    views: -1
+  }).then(res => {
+    data.msg = '热门文章';
+    let items = [];
+    res.forEach(item => {
+      items.push({
+        ids: item.ids,
+        title: item.title,
+        views: item.views,
+      });
+    });
+    data.data = items;
+  }).then(() => {
+    res.json(data);
+  }).catch(error => {
+    console.log(error);
+  })
+})
+
+/**
+ * 获取点赞量排名前 7 的文章
+ */
+router.get('/popularlist', async (req, res) => {
+  const count = 7;
+  Article.find().limit(count).sort({
+    likes: -1
+  }).then(res => {
+    data.msg = '热门文章';
+    let items = [];
+    res.forEach(item => {
+      items.push({
+        ids: item.ids,
+        title: item.title,
+        likes: item.likes,
+      });
+    });
+    data.data = items;
+  }).then(() => {
+    res.json(data);
+  }).catch(error => {
+    console.log(error);
+  })
+})
+
+/**
  * 获取文章详情
  */
 router.get('/details', async (req, res) => {
@@ -96,6 +146,7 @@ router.get('/details', async (req, res) => {
         ids: res.userIds
       })
     }
+
   }).then(res => {
     if (res) {
       data.userData = res;
