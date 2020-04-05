@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     }
   }).then(user => {
     if (user) {
-      res.cookie('userIds', user.ids, { maxAge: 1000 * 60 * 60 * 24, httpOnly: true });
+      res.cookie('userIds', user._id, { maxAge: 1000 * 60 * 60 * 24, httpOnly: true });
     }
     res.json(data);
   }).catch(error => {
@@ -97,7 +97,7 @@ router.post('/logout', async (req, res) => {
  */
 router.get('/personaldata', async (req, res) => {
   if (req.cookies.userIds) {
-    User.findOne({ ids: req.cookies.userIds }).then(res => {
+    User.findOne({ _id: req.cookies.userIds }).then(res => {
       data.msg = res.username;
       data.data = res;
     }).then(() => {
@@ -119,7 +119,7 @@ router.get('/data', async (req, res) => {
   const ids = req.query.ids;
   const userIds = req.cookies.userIds || '';
 
-  User.findOne({ ids }).then(res => {
+  User.findOne({ _id: ids }).then(res => {
     if (!res) {
       data.msg = '用户不存在';
       data.state = 404;
@@ -152,7 +152,7 @@ router.post('/edit/profile', async (req, res) => {
   const motto = req.body.motto;
 
   if (userIds) {
-    User.updateOne({ ids: userIds }, {
+    User.updateOne({ _id: userIds }, {
       username, profession, company, motto
     }).then(res => {
       if (res) {
@@ -181,7 +181,7 @@ router.post('/edit/avatar', async (req, res) => {
   const avatar = req.body.avatar;
 
   if (userIds) {
-    User.updateOne({ ids: userIds }, { avatar }).then(res => {
+    User.updateOne({ _id: userIds }, { avatar }).then(res => {
       if (res) {
         data.msg = '修改成功';
         data.state = 200;
@@ -210,7 +210,7 @@ router.post('/edit/password', async (req, res) => {
   const newPassword = req.body.newPassword;
 
   if (userIds) {
-    User.findOne({ ids: userIds }).then(res => {
+    User.findOne({ _id: userIds }).then(res => {
       if (res.password !== oldPassword) {
         data.msg = '密码错误！';
         data.state = 202;

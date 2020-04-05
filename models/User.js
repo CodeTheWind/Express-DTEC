@@ -6,11 +6,6 @@ const User = new mongoose.Schema({
   tel: String,
   password: String,
 
-  ids: {
-    type: String,
-    default: "user_" + Math.random().toString(36).substr(2),
-  },
-
   username: {
     type: String,
     default: "dtec_" + Math.random().toString(36).substr(2),

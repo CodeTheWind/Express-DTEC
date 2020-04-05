@@ -11,11 +11,6 @@ const Article = new mongoose.Schema({
   tag: String,
   comments: Array,
 
-  ids: {
-    type: String,
-    default: "article_" + Math.random().toString(36).substr(2),
-  },
-
   views: {
     type: Number,
     default: 0,

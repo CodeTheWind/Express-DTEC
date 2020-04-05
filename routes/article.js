@@ -33,7 +33,7 @@ router.get('/list', async (req, res) => {
       let items = [];
       res.forEach(item => {
         items.push({
-          ids: item.ids,
+          _id: item._id,
           title: item.title,
           des: item.des,
           date: item.date,
@@ -85,7 +85,7 @@ router.get('/hotlist', async (req, res) => {
     let items = [];
     res.forEach(item => {
       items.push({
-        ids: item.ids,
+        _id: item._id,
         title: item.title,
         views: item.views,
       });
@@ -110,7 +110,7 @@ router.get('/popularlist', async (req, res) => {
     let items = [];
     res.forEach(item => {
       items.push({
-        ids: item.ids,
+        _id: item._id,
         title: item.title,
         likes: item.likes,
       });
@@ -129,7 +129,7 @@ router.get('/popularlist', async (req, res) => {
 router.get('/details', async (req, res) => {
   const ids = req.query.ids || '';
 
-  Article.findOne({ ids }).then(res => {
+  Article.findOne({ _id: ids }).then(res => {
 
     if (!res) {
       data.msg = '文章不存在';
@@ -143,7 +143,7 @@ router.get('/details', async (req, res) => {
       res.save();
 
       return User.findOne({
-        ids: res.userIds
+        _id: res.userIds
       })
     }
 
@@ -158,6 +158,8 @@ router.get('/details', async (req, res) => {
     res.json(data);
   }).catch(error => {
     console.log(error);
+    data.state = 404;
+    res.json(data);
   })
 })
 
@@ -180,7 +182,7 @@ router.post('/post', async (req, res) => {
         userIds
       }).save().then(res => {
         data.msg = '发表成功！';
-        data.articleIds = res.ids;
+        data.articleIds = res._id;
       }).then(() => {
         res.json(data);
       }).catch(error => {
@@ -204,7 +206,7 @@ router.post('/post', async (req, res) => {
 router.post('/delete', async (req, res) => {
   const ids = req.body.ids;
 
-  Article.deleteOne({ ids }).then(res => {
+  Article.deleteOne({ _id: ids }).then(res => {
     if (res) {
       data.msg = '删除成功！';
     } else {
@@ -232,7 +234,7 @@ router.post('/update', async (req, res) => {
 
   if (userIds) {
     if (userIds === req.body.userIds) {
-      Article.updateOne({ ids: req.body.ids }, {
+      Article.updateOne({ _id: req.body.ids }, {
         title, des, content, typeId, typeName, tag
       }).then(res => {
         if (res) {
@@ -265,7 +267,7 @@ router.post('/update', async (req, res) => {
 router.post('/like', async (req, res) => {
   const ids = req.body.ids || '';
 
-  Article.findOne({ ids }).then(res => {
+  Article.findOne({ _id: ids }).then(res => {
     data.msg = '点赞成功';
 
     res.likes++;
@@ -297,7 +299,7 @@ router.post('/comment', async (req, res) => {
       comment.avatar = res.avatar;
       comment.username = res.username;
 
-      return Article.findOne({ ids });
+      return Article.findOne({ _id: ids });
     }).then(res => {
 
       res.comments.push(comment);
@@ -322,8 +324,8 @@ router.post('/comment', async (req, res) => {
  */
 router.get('/list/userpost', async (req, res) => {
   const userIds = req.query.ids;
-
-  User.findOne({ ids: userIds }).then(res => {
+  
+  User.findOne({ _id: userIds }).then(res => {
     if (!res) {
       data.msg = '用户不存在！';
       data.state = 404;
