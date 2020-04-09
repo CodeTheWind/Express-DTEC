@@ -1,10 +1,9 @@
 const express = require('express');
 const User = require('../models/User');
+const localDate = require('../utils/getCurrentDate');
+
 const router = express.Router();
 
-/**
- * 返回数据统一格式
- */
 let data;
 
 router.use((req, res, next) => {
@@ -21,24 +20,28 @@ router.use((req, res, next) => {
 router.post('/register', async (req, res) => {
   const password = req.body.password;
   const tel = req.body.tel;
+  const username = "dtec_" + Math.random().toString(36).substr(2);
+  const createdDate = localDate.localDate();
 
-  User.findOne({ tel }).then(res => {
+  User.findOne({ tel }).then(user => {
 
-    if (res) {
+    if (user) {
       data.msg = '用户已存在!';
       data.state = 1;
       return;
     } else {
       // 创建一个新用户
-      const newUser = new User({ password, tel });
-
-      data.msg = '注册成功！';
-      return newUser.save();
+      return new User({ password, tel, username, createdDate }).save();
     }
-
-  }).then(() => {
-    res.json(data);
+  }).then(user => {
+    if (user) {
+      data.msg = '注册成功！';
+      res.json(data);
+    }
   }).catch(error => {
+    data.msg = '注册失败！';
+    data.state = 202;
+    res.json(data);
     console.log(error);
   });
 })
@@ -95,7 +98,7 @@ router.post('/logout', async (req, res) => {
 /**
  * 获取当前登录人的资料
  */
-router.get('/personaldata', async (req, res) => {
+router.get('/get/personaldata', async (req, res) => {
   if (req.cookies.userIds) {
     User.findOne({ _id: req.cookies.userIds }).then(res => {
       data.msg = res.username;
@@ -115,18 +118,18 @@ router.get('/personaldata', async (req, res) => {
 /**
  * 获取用户资料
  */
-router.get('/data', async (req, res) => {
+router.get('/get/data', async (req, res) => {
   const ids = req.query.ids;
-  const userIds = req.cookies.userIds || '';
+  const userIds = req.cookies.userIds;
 
-  User.findOne({ _id: ids }).then(res => {
-    if (!res) {
+  User.findOne({ _id: ids }).then(user => {
+    if (!user) {
       data.msg = '用户不存在';
       data.state = 404;
       return;
     } else {
-      data.msg = res.username;
-      data.data = res;
+      data.msg = user.username;
+      data.data = user;
 
       if (ids === userIds) {
         data.owner = true;
@@ -138,13 +141,16 @@ router.get('/data', async (req, res) => {
     }
   }).then(() => {
     res.json(data);
+  }).catch(error => {
+    data.msg = error;
+    res.json(data);
   })
 })
 
 /**
  * 修改个人资料
  */
-router.post('/edit/profile', async (req, res) => {
+router.post('/update/data', async (req, res) => {
   const userIds = req.cookies.userIds;
   const username = req.body.username;
   const profession = req.body.profession;
@@ -154,14 +160,13 @@ router.post('/edit/profile', async (req, res) => {
   if (userIds) {
     User.updateOne({ _id: userIds }, {
       username, profession, company, motto
-    }).then(res => {
-      if (res) {
+    }).then(user => {
+      if (user) {
         data.msg = '修改成功';
       } else {
         data.msg = '修改失败';
         data.state = 1;
       }
-    }).then(() => {
       res.json(data);
     }).catch(error => {
       console.log(error);
@@ -176,20 +181,19 @@ router.post('/edit/profile', async (req, res) => {
 /**
  * 修改用户头像
  */
-router.post('/edit/avatar', async (req, res) => {
+router.post('/update/avatar', async (req, res) => {
   const userIds = req.cookies.userIds;
   const avatar = req.body.avatar;
 
   if (userIds) {
-    User.updateOne({ _id: userIds }, { avatar }).then(res => {
-      if (res) {
+    User.updateOne({ _id: userIds }, { avatar }).then(user => {
+      if (user) {
         data.msg = '修改成功';
         data.state = 200;
       } else {
         data.msg = '修改失败';
         data.state = 202;
       }
-    }).then(() => {
       res.json(data);
     }).catch(error => {
       console.log(error);
@@ -204,19 +208,19 @@ router.post('/edit/avatar', async (req, res) => {
 /**
  * 修改密码
  */
-router.post('/edit/password', async (req, res) => {
+router.post('/update/password', async (req, res) => {
   const userIds = req.cookies.userIds;
   const oldPassword = req.body.oldPassword;
   const newPassword = req.body.newPassword;
 
   if (userIds) {
-    User.findOne({ _id: userIds }).then(res => {
-      if (res.password !== oldPassword) {
+    User.findOne({ _id: userIds }).then(user => {
+      if (user.password !== oldPassword) {
         data.msg = '密码错误！';
         data.state = 202;
       } else {
-        res.password = newPassword;
-        res.save();
+        user.password = newPassword;
+        user.save();
         data.msg = '修改成功！';
       }
     }).then(() => {
@@ -224,7 +228,6 @@ router.post('/edit/password', async (req, res) => {
     }).catch(error => {
       console.log(error);
     })
-
   } else {
     data.msg = '未登录';
     data.state = 302;

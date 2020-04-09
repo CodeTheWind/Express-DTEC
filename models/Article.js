@@ -1,15 +1,21 @@
 const mongoose = require('mongoose');
-const localDate = require('../utils/getCurrentDate');
 
 const Article = new mongoose.Schema({
   title: String,
   des: String,
   content: String,
-  userIds: String,
-  typeId: Number,
-  typeName: String,
-  tag: String,
-  comments: Array,
+  tags: Array,
+  date: String,
+
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+  },
 
   views: {
     type: Number,
@@ -19,11 +25,6 @@ const Article = new mongoose.Schema({
   likes: {
     type: Number,
     default: 0,
-  },
-
-  date: {
-    type: String,
-    default: localDate.localDate(),
   }
 });
 

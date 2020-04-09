@@ -1,8 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const path = require('path');
 const formidable = require('formidable');
 const fs = require('fs');
+
+const router = express.Router();
 
 let data;
 

@@ -5,15 +5,12 @@ const User = new mongoose.Schema({
   // 手机号、密码、ids、用户名、性别、个性签名、职业、公司、用户创建时间
   tel: String,
   password: String,
-
-  username: {
-    type: String,
-    default: "dtec_" + Math.random().toString(36).substr(2),
-  },
+  createdDate: String,
+  username: String,
 
   avatar: {
     type: String,
-    default: 'http://127.0.0.1:8000/avatar/default.png',
+    default: '/img/avatar/default.png',
   },
 
   sex: {
@@ -41,10 +38,6 @@ const User = new mongoose.Schema({
     default: false
   },
 
-  createdDate: {
-    type: String,
-    default: localDate.localDate(),
-  }
 });
 
 module.exports = mongoose.model('User', User);

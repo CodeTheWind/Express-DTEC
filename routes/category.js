@@ -1,5 +1,6 @@
 const express = require('express');
 const Category = require('../models/Category');
+
 const router = express.Router();
 
 let data;
@@ -16,9 +17,20 @@ router.use((req, res, next) => {
  * 获取分类列表
  */
 router.get('/list', async (req, res) => {
-  Category.find().then(res => {
+  Category.find().populate(['creator']).then(res => {
     data.msg = '分类列表';
-    data.data = res;
+
+    let category = [];
+
+    res.forEach(item => {
+      let newItem = JSON.parse(JSON.stringify(item));
+      const creator = item.creator.username;
+
+      newItem.creator = creator;
+      category.push(newItem);
+    })
+
+    data.data = category;
   }).then(() => {
     res.json(data);
   }).catch(error => {

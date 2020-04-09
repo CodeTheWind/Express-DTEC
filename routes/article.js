@@ -1,8 +1,10 @@
 const express = require('express');
 const Article = require('../models/Article');
-const User = require('../models/User');
-const router = express.Router();
+const Category = require('../models/Category');
+const Comment = require('../models/Comment');
 const localDate = require('../utils/getCurrentDate');
+
+const router = express.Router();
 
 let data;
 
@@ -12,35 +14,30 @@ router.use((req, res, next) => {
     state: 0,
   }
   next();
-});
+})
 
 /**
  * 获取文章列表
  */
-router.get('/list', async (req, res) => {
+router.get('/get/list', async (req, res) => {
   const keyword = req.query.keyword || '';   // 搜索关键字
   const typeId = req.query.typeId || 0;      // 分类id
-  const count = req.query.count || 10;       // 每页显示的条数
-  const page = req.query.page || 1;          // 页数
+  const count = Number(req.query.count) || 10;       // 每页显示的条数
+  const page = Number(req.query.page) || 1;          // 页数
   const skip = (page - 1) * count;           // 查询时忽略的条数
 
   if (typeId == 0) {
     Article.find({ title: { $regex: keyword } }).limit(count).skip(skip).sort({
       _id: -1
-    }).then(res => {
-      data.msg = '文章列表';
+    }).then(articles => {
+      data.msg = '全部文章列表';
 
-      let items = [];
-      res.forEach(item => {
-        items.push({
-          _id: item._id,
-          title: item.title,
-          des: item.des,
-          date: item.date,
-        })
-      });
+      articles.forEach(item => {
+        item.comments = undefined;
+        item.content = undefined;
+      })
 
-      data.data = items;
+      data.data = articles;
     }).then(() => {
       res.json(data);
     }).catch(error => {
@@ -48,23 +45,22 @@ router.get('/list', async (req, res) => {
     })
 
   } else {
+    Category.findOne({ typeId }).then(category => {
+      const id = category._id;
+      data.msg = category.typeName;
 
-    Article.find({ typeId, title: { $regex: keyword } }).limit(count).skip(skip).sort({
-      _id: -1
-    }).then(res => {
-      data.msg = '文章列表';
-
-      let items = [];
-      res.forEach(item => {
-        items.push({
-          ids: item.ids,
-          title: item.title,
-          des: item.des,
-          date: item.date,
-        })
+      return Article.find({ category: id, title: { $regex: keyword } }).limit(count).skip(skip).sort({
+        _id: -1
       });
+    }).then(articles => {
+      data.msg += '文章列表';
 
-      data.data = items;
+      articles.forEach(item => {
+        item.comments = undefined;
+        item.content = undefined;
+      })
+
+      data.data = articles;
     }).then(() => {
       res.json(data);
     }).catch(error => {
@@ -74,116 +70,223 @@ router.get('/list', async (req, res) => {
 })
 
 /**
- * 获取阅读量排名前 7 的文章
+ * 获取特殊文章列表 - 动态路由
  */
-router.get('/hotlist', async (req, res) => {
-  const count = 7;
-  Article.find().limit(count).sort({
-    views: -1
-  }).then(res => {
-    data.msg = '热门文章';
-    let items = [];
-    res.forEach(item => {
-      items.push({
-        _id: item._id,
-        title: item.title,
-        views: item.views,
-      });
-    });
-    data.data = items;
-  }).then(() => {
-    res.json(data);
-  }).catch(error => {
-    console.log(error);
-  })
-})
+router.get('/get/list/:listType', async (req, res) => {
+  const count = req.query.count || 7;
+  const author = req.query.ids;
+  const type = req.params.listType
 
-/**
- * 获取点赞量排名前 7 的文章
- */
-router.get('/popularlist', async (req, res) => {
-  const count = 7;
-  Article.find().limit(count).sort({
-    likes: -1
-  }).then(res => {
-    data.msg = '热门文章';
-    let items = [];
-    res.forEach(item => {
-      items.push({
-        _id: item._id,
-        title: item.title,
-        likes: item.likes,
+  switch (type) {
+    // 最热门的文章列表
+    case 'hot':
+      Article.find().limit(count).sort({
+        views: -1,
+      }).then(articles => {
+        data.msg = '最热文章';
+        data.state = 200;
+
+        articles.forEach(item => {
+          item.content = undefined;
+        });
+        data.data = articles;
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
       });
-    });
-    data.data = items;
-  }).then(() => {
-    res.json(data);
-  }).catch(error => {
-    console.log(error);
-  })
+      break;
+    // 最受欢迎的文章列表
+    case 'popular':
+      Article.find().limit(count).sort({
+        likes: -1,
+      }).then(articles => {
+        data.msg = '最热文章';
+        data.state = 200;
+
+        articles.forEach(item => {
+          item.content = undefined;
+        });
+        data.data = articles;
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
+      });
+      break;
+    // 某一用户发布的文章
+    case 'user':
+      if (author) {
+        Article.find({ author }).sort({ _id: -1 }).then(articles => {
+
+          if (articles.length > 0) {
+            data.msg = author;
+            data.state = 200;
+
+            articles.forEach(item => {
+              item.content = undefined;
+            });
+            data.data = articles;
+            res.json(data);
+          } else {
+            data.msg = '该用户没有发布过文章或该用户不存在！';
+            data.state = 404;
+            data.data = [];
+            res.json(data);
+          }
+        }).catch(error => {
+          console.log(error);
+        })
+      } else {
+        data.msg = '未传入用户的id';
+        data.state = 404;
+        res.json(data);
+      }
+      break;
+    default:
+      data.msg = '没有该类型的文章列表！';
+      data.state = 404;
+      res.json(data);
+      break;
+  }
 })
 
 /**
  * 获取文章详情
  */
-router.get('/details', async (req, res) => {
-  const ids = req.query.ids || '';
+router.get('/get/details', async (req, res) => {
+  const ids = req.query.ids;
 
-  Article.findOne({ _id: ids }).then(res => {
+  Article.findOne({ _id: ids }).populate(['author', { path: 'category', select: 'typeName' }])
+    .then(article => {
 
-    if (!res) {
-      data.msg = '文章不存在';
+      if (!article) {
+        data.msg = '文章不存在';
+        data.state = 404;
+        return;
+      } else {
+        data.msg = '文章详情';
+
+        let articleData = JSON.parse(JSON.stringify(article));
+        articleData.author.password = undefined;
+        articleData.category = article.category.typeName;
+
+        data.data = articleData;
+
+        article.views++;
+        article.save();
+      }
+
+    }).then(() => {
+      res.json(data);
+    }).catch(error => {
+      console.log(error);
       data.state = 404;
-      return;
-    } else {
-      data.msg = '文章详情';
-      data.articleData = res;
+      res.json(data);
+    })
+})
 
-      res.views++;
-      res.save();
+/**
+ * 获取文章评论
+ */
+router.get('/get/comments', async (req, res) => {
+  const ids = req.query.ids;
 
-      return User.findOne({
-        _id: res.userIds
-      })
-    }
+  Comment.find({ article: ids }).populate('user').sort({ _id: -1 }).then(comment => {
+    data.state = 200;
+    data.msg = '评论列表';
 
-  }).then(res => {
-    if (res) {
-      data.userData = res;
-      data.userData.password = undefined;
-    } else {
-      return;
-    }
+    let newComment = [];
+
+    comment.forEach(item => {
+      const user = {
+        _id: item.user._id,
+        avatar: item.user.avatar,
+        username: item.user.username
+      };
+      let newItem = JSON.parse(JSON.stringify(item));
+      newItem.user = user;
+      newComment.push(newItem);
+    })
+
+    data.data = newComment;
   }).then(() => {
     res.json(data);
   }).catch(error => {
     console.log(error);
-    data.state = 404;
+  })
+})
+
+/**
+ * 评论文章
+ */
+router.post('/add/comment', async (req, res) => {
+  const article = req.body.ids;
+  const user = req.cookies.userIds;
+
+  if (user) {
+    new Comment({
+      article,
+      user,
+      content: req.body.content,
+      date: localDate.localDate(),
+    }).save().then(comment => {
+      if (comment) {
+        data.msg = '评论成功！';
+        data.state = 200;
+      } else {
+        data.msg = '评论失败！';
+        data.state = '202';
+      }
+    }).then(() => {
+      res.json(data);
+    }).catch(error => {
+      console.log(error);
+    })
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
     res.json(data);
+  }
+})
+
+/**
+ * 点赞文章
+ */
+router.post('/update/likes', async (req, res) => {
+  const ids = req.body.ids;
+
+  Article.findOne({ _id: ids }).then(res => {
+    data.msg = '点赞成功';
+
+    res.likes++;
+    res.save();
+  }).then(() => {
+    res.json(data);
+  }).catch(error => {
+    console.log(error);
   })
 })
 
 /**
  * 发表文章
  */
-router.post('/post', async (req, res) => {
+router.post('/add', async (req, res) => {
   const userIds = req.cookies.userIds;
 
   if (userIds) {
-    if (userIds === req.body.userIds) {
-
+    if (userIds === req.body.ids) {
       new Article({
         title: req.body.title,
         des: req.body.des,
         content: req.body.content,
-        typeId: req.body.typeId,
-        typeName: req.body.typeName,
-        tag: req.body.tag,
-        userIds
-      }).save().then(res => {
+        category: req.body.category,
+        tags: req.body.tags,
+        date: localDate.localDate(),
+        author: userIds
+      }).save().then(article => {
         data.msg = '发表成功！';
-        data.articleIds = res._id;
-      }).then(() => {
+        data.state = 200;
+        data.articleIds = article._id;
+
         res.json(data);
       }).catch(error => {
         console.log(error);
@@ -201,7 +304,57 @@ router.post('/post', async (req, res) => {
 })
 
 /**
- * 单项删除文章
+ * 用户修改文章
+ */
+router.post('/update', async (req, res) => {
+  const author = req.cookies.userIds;
+  const ids = req.body.ids;
+  const title = req.body.title;
+  const des = req.body.des;
+  const content = req.body.content;
+  const category = req.body.category;
+  const tags = req.body.tags;
+
+  if (author) {
+    Article.findOne({ _id: ids }).then(article => {
+
+      if (article.author === author) {
+        article.title = title;
+        article.des = des;
+        article.content = content;
+        article.category = category;
+        article.tags = tags;
+
+        return article.save();
+      } else {
+        data.msg = '修改失败，修改的不是自己的文章！';
+        data.state = 202;
+        return;
+      }
+    }).then(article => {
+      if (article) {
+        data.msg = '修改成功！';
+        data.state = 200;
+        data.ids = article._id;
+
+        res.json(data);
+      } else {
+        return;
+      }
+    }).catch(error => {
+      data.msg = error;
+      data.state = 404;
+      res.json(data);
+    })
+  } else {
+    data.msg = '未登录';
+    data.state = 302;
+    res.json(data);
+  }
+})
+
+/**
+ * 用户删除文章
  */
 router.post('/delete', async (req, res) => {
   const ids = req.body.ids;
@@ -219,142 +372,5 @@ router.post('/delete', async (req, res) => {
     console.log(error);
   })
 })
-
-/**
- * 编辑文章
- */
-router.post('/update', async (req, res) => {
-  const userIds = req.cookies.userIds;
-  const title = req.body.title;
-  const des = req.body.des;
-  const content = req.body.content;
-  const typeId = req.body.typeId;
-  const typeName = req.body.typeName;
-  const tag = req.body.tag;
-
-  if (userIds) {
-    if (userIds === req.body.userIds) {
-      Article.updateOne({ _id: req.body.ids }, {
-        title, des, content, typeId, typeName, tag
-      }).then(res => {
-        if (res) {
-          data.msg = '修改成功';
-          data.ids = req.body.ids;
-        } else {
-          data.msg = '修改失败';
-          data.state = 202;
-        }
-      }).then(() => {
-        res.json(data);
-      }).catch(error => {
-        console.log(error);
-      })
-    } else {
-      data.msg = '修改失败，修改的不是自己的文章！';
-      data.state = 202;
-      res.json(data);
-    }
-  } else {
-    data.msg = '未登录';
-    data.state = 302;
-    res.json(data);
-  }
-})
-
-/**
- * 点赞文章
- */
-router.post('/like', async (req, res) => {
-  const ids = req.body.ids || '';
-
-  Article.findOne({ _id: ids }).then(res => {
-    data.msg = '点赞成功';
-
-    res.likes++;
-    res.save();
-  }).then(() => {
-    res.json(data);
-  }).catch(error => {
-    console.log(error);
-  })
-})
-
-/**
- * 评论文章
- */
-router.post('/comment', async (req, res) => {
-  const ids = req.body.ids || '';
-  const userIds = req.cookies.userIds;
-
-  let comment = {
-    avatar: '',
-    username: '',
-    content: req.body.comment || '',
-    date: localDate.localDate(),
-  }
-
-  if (userIds) {
-    User.findOne({ ids: userIds }).then(res => {
-
-      comment.avatar = res.avatar;
-      comment.username = res.username;
-
-      return Article.findOne({ _id: ids });
-    }).then(res => {
-
-      res.comments.push(comment);
-      res.save();
-      data.msg = '评论成功！';
-
-    }).then(() => {
-      res.json(data);
-    }).catch(error => {
-      console.log(error);
-    })
-
-  } else {
-    data.msg = '未登录';
-    data.state = 302;
-    res.json(data);
-  }
-})
-
-/**
- * 获取用户发布的文章
- */
-router.get('/list/userpost', async (req, res) => {
-  const userIds = req.query.ids;
-  
-  User.findOne({ _id: userIds }).then(res => {
-    if (!res) {
-      data.msg = '用户不存在！';
-      data.state = 404;
-      return;
-    } else {
-      return Article.find({ userIds }).sort({ _id: -1 });
-    }
-  }).then(res => {
-    if (res) {
-      let likes = 0;
-      let views = 0;
-      data.msg = userIds;
-      res.forEach(item => {
-        item.content = undefined;
-        item.typeId = undefined;
-        item.tag = undefined;
-        likes += item.likes;
-        views += item.views;
-      })
-      data.data = res;
-      data.likes = likes;
-      data.views = views;
-    }
-  }).then(() => {
-    res.json(data);
-  }).catch(error => {
-    console.log(error);
-  })
-})
-
 
 module.exports = router;
