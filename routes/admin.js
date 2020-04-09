@@ -20,10 +20,10 @@ router.use((req, res, next) => {
 /**
  * 获取用户列表
  */
-router.get('/userlist', async (req, res) => {
+router.get('/get/userlist', async (req, res) => {
   const userIds = req.cookies.userIds || '';
-  const count = req.query.count || 10;
-  const page = req.query.page || 1;
+  const count = Number(req.query.count) || 10;
+  const page = Number(req.query.page) || 1;
   const skip = (page - 1) * count;
 
   // 判断是否登录
@@ -59,7 +59,7 @@ router.get('/userlist', async (req, res) => {
 /**
  * 添加分类
  */
-router.post('/addcategory', async (req, res) => {
+router.post('/add/category', async (req, res) => {
   const userIds = req.cookies.userIds || '';
   const typeId = req.body.typeId || '';
   const typeName = req.body.typeName || '';

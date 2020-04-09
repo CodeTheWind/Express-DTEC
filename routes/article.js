@@ -155,7 +155,7 @@ router.get('/get/list/:listType', async (req, res) => {
 router.get('/get/details', async (req, res) => {
   const ids = req.query.ids;
 
-  Article.findOne({ _id: ids }).populate(['author', { path: 'category', select: 'typeName' }])
+  Article.findOne({ _id: ids }).populate(['author', 'category'])
     .then(article => {
 
       if (!article) {
@@ -167,7 +167,10 @@ router.get('/get/details', async (req, res) => {
 
         let articleData = JSON.parse(JSON.stringify(article));
         articleData.author.password = undefined;
-        articleData.category = article.category.typeName;
+        articleData.category = {
+          typeId: article.category.typeId,
+          typeName: article.category.typeName,
+        };
 
         data.data = articleData;
 
@@ -318,7 +321,7 @@ router.post('/update', async (req, res) => {
   if (author) {
     Article.findOne({ _id: ids }).then(article => {
 
-      if (article.author === author) {
+      if (article.author._id == author) {
         article.title = title;
         article.des = des;
         article.content = content;
@@ -332,15 +335,14 @@ router.post('/update', async (req, res) => {
         return;
       }
     }).then(article => {
+
       if (article) {
         data.msg = '修改成功！';
         data.state = 200;
         data.ids = article._id;
-
-        res.json(data);
-      } else {
-        return;
       }
+
+      res.json(data);
     }).catch(error => {
       data.msg = error;
       data.state = 404;
