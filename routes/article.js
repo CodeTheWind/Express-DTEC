@@ -26,32 +26,45 @@ router.get('/get/list', async (req, res) => {
   const page = Number(req.query.page) || 1;          // 页数
   const skip = (page - 1) * count;           // 查询时忽略的条数
 
+  Article.find().countDocuments().then(count => {
+    data.total = count;
+  });
+
   if (typeId == 0) {
-    Article.find({ title: { $regex: keyword } }).limit(count).skip(skip).sort({
-      _id: -1
-    }).then(articles => {
-      data.msg = '全部文章列表';
+    Article.find({ title: { $regex: keyword } }).limit(count).skip(skip)
+      .populate([
+        { path: 'author', select: 'username' },
+        { path: "category", select: ['typeId', 'typeName'] }
+      ]).sort({
+        _id: -1
+      }).then(articles => {
+        data.msg = '全部文章列表';
 
-      articles.forEach(item => {
-        item.comments = undefined;
-        item.content = undefined;
+        articles.forEach(item => {
+          item.comments = undefined;
+          item.content = undefined;
+        })
+
+        data.data = articles;
+
+      }).then(() => {
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
       })
-
-      data.data = articles;
-    }).then(() => {
-      res.json(data);
-    }).catch(error => {
-      console.log(error);
-    })
 
   } else {
     Category.findOne({ typeId }).then(category => {
       const id = category._id;
       data.msg = category.typeName;
 
-      return Article.find({ category: id, title: { $regex: keyword } }).limit(count).skip(skip).sort({
-        _id: -1
-      });
+      return Article.find({ category: id, title: { $regex: keyword } }).limit(count).skip(skip)
+        .populate([
+          { path: 'author', select: 'username' },
+          { path: "category", select: ['typeId', 'typeName'] }
+        ]).sort({
+          _id: -1
+        });
     }).then(articles => {
       data.msg += '文章列表';
 

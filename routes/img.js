@@ -26,13 +26,25 @@ router.get('/avatar/:filename', async (req, res) => {
 })
 
 /**
- * 上传头像
+ * 返回banner图片
  */
-router.post('/upload', async (req, res) => {
+router.get('/banner/:filename', async (req, res) => {
+  const banner = req.params.filename;
+  const bannerPath = path.join(__dirname, '../public/banner/');
+
+  res.sendFile(bannerPath + banner);
+})
+
+
+/**
+ * 上传图片
+ */
+router.post('/upload/:imgCategory', async (req, res) => {
+  const imgCategory = req.params.imgCategory;
   let form = new formidable.IncomingForm();
   form.encoding = 'utf-8';
   form.keepExtensions = true;
-  form.uploadDir = path.join(__dirname, '../public/avatar/');
+  form.uploadDir = path.join(__dirname, '../public/' + imgCategory + '/');
 
   form.parse(req, (error, fidlds, files) => {
     if (error) {
@@ -43,8 +55,8 @@ router.post('/upload', async (req, res) => {
     let imgName = files.file.name;
 
     let extname = path.extname(imgName);
-    let newName = "avatar_" + Math.random().toString(36).substr(2) + extname;
-    let newPath = path.join(__dirname, '../public/avatar/') + newName;
+    let newName = imgCategory + "_" + Math.random().toString(36).substr(2) + extname;
+    let newPath = path.join(__dirname, '../public/' + imgCategory + '/') + newName;
 
     fs.rename(imgPath, newPath, (error) => {
       if (error) {
@@ -53,7 +65,7 @@ router.post('/upload', async (req, res) => {
         data.msg = '上传成功！';
         data.state = 200;
         data.data = {
-          path: '/img/avatar/' + newName,
+          path: '/img/' + imgCategory + '/' + newName,
           name: newName,
         };
         res.json(data);
