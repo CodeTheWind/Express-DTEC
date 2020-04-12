@@ -1,7 +1,8 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const formidable = require('formidable');
-const fs = require('fs');
+const Banner = require('../models/Banner');
 
 const router = express.Router();
 
@@ -71,6 +72,21 @@ router.post('/upload/:imgCategory', async (req, res) => {
         res.json(data);
       }
     })
+  })
+})
+
+/**
+ * 获取banner图列表
+ */
+router.get('/get/banner', (req, res) => {
+  Banner.find().then(banners => {
+    data.msg = '封面图列表';
+    data.state = 200;
+    data.data = banners;
+
+    res.json(data);
+  }).catch(error => {
+    console.log(error);
   })
 })
 

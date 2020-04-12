@@ -2,6 +2,7 @@ const express = require('express');
 const Article = require('../models/Article');
 const Category = require('../models/Category');
 const User = require('../models/User');
+const Banner = require('../models/Banner');
 const deleteObject = require('../utils/deleteObject');
 const localDate = require('../utils/getCurrentDate');
 
@@ -125,11 +126,37 @@ router.post('/delete/:objectname', async (req, res) => {
         res.json(data);
       });
       break;
+    case 'banner':
+      deleteObject.deleteObject(Banner, ids, data).then(data => {
+        res.json(data);
+      });
+      break;
     default:
       data.msg = '没有该对象！';
       data.state = 404;
       res.json(data);
   }
+})
+
+/**
+ * 上传banner图
+ */
+router.post('/add/banner', (req, res) => {
+  const name = req.body.name;
+  const path = req.body.path;
+
+  new Banner({ name, path }).save().then(banner => {
+    if (banner) {
+      data.msg = '上传成功';
+      data.state = 200;
+    } else {
+      data.msg = '上传失败';
+      data.state = 202;
+    }
+    res.json(data);
+  }).catch(error => {
+    console.log(error);
+  })
 })
 
 
