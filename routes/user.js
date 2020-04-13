@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const Article = require('../models/Article');
 const localDate = require('../utils/getCurrentDate');
 
 const router = express.Router();
@@ -121,6 +122,8 @@ router.get('/get/personaldata', async (req, res) => {
 router.get('/get/data', async (req, res) => {
   const ids = req.query.ids;
   const userIds = req.cookies.userIds;
+  let likes = 0;
+  let views = 0;
 
   User.findOne({ _id: ids }).then(user => {
     if (!user) {
@@ -128,7 +131,8 @@ router.get('/get/data', async (req, res) => {
       data.state = 404;
       return;
     } else {
-      data.msg = user.username;
+      data.msg = '用户信息';
+      data.state = 200;
       data.data = user;
 
       if (ids === userIds) {
@@ -138,8 +142,20 @@ router.get('/get/data', async (req, res) => {
         data.data.password = undefined;
       }
 
+      return Article.find({ author: ids });
     }
-  }).then(() => {
+  }).then(articles => {
+    if (articles) {
+      articles.forEach(item => {
+        views += item.views;
+        likes += item.likes;
+      });
+      const newData = JSON.parse(JSON.stringify(data.data));
+      newData.views = views;
+      newData.likes = likes;
+
+      data.data = newData;
+    }
     res.json(data);
   }).catch(error => {
     data.msg = error;
@@ -234,6 +250,7 @@ router.post('/update/password', async (req, res) => {
     res.json(data);
   }
 })
+
 
 
 module.exports = router;

@@ -4,9 +4,8 @@ const Article = new mongoose.Schema({
   title: String,
   des: String,
   content: String,
-  tags: Array,
   date: String,
-
+  tags: Array,
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

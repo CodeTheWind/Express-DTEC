@@ -168,7 +168,7 @@ router.get('/get/list/:listType', async (req, res) => {
 router.get('/get/details', async (req, res) => {
   const ids = req.query.ids;
 
-  Article.findOne({ _id: ids }).populate(['author', 'category'])
+  Article.findOne({ _id: ids }).populate('category')
     .then(article => {
 
       if (!article) {
@@ -177,16 +177,7 @@ router.get('/get/details', async (req, res) => {
         return;
       } else {
         data.msg = '文章详情';
-
-        let articleData = JSON.parse(JSON.stringify(article));
-        articleData.author.password = undefined;
-        articleData.category = {
-          typeId: article.category.typeId,
-          typeName: article.category.typeName,
-        };
-
-        data.data = articleData;
-
+        data.data = article;
         article.views++;
         article.save();
       }
@@ -387,5 +378,7 @@ router.post('/delete', async (req, res) => {
     console.log(error);
   })
 })
+
+
 
 module.exports = router;

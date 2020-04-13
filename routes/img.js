@@ -36,7 +36,6 @@ router.get('/banner/:filename', async (req, res) => {
   res.sendFile(bannerPath + banner);
 })
 
-
 /**
  * 上传图片
  */
@@ -89,5 +88,7 @@ router.get('/get/banner', (req, res) => {
     console.log(error);
   })
 })
+
+
 
 module.exports = router;
