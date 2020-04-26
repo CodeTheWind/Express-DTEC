@@ -43,6 +43,7 @@ router.use((req, res, next) => {
  * 获取用户列表
  */
 router.get('/get/userlist', async (req, res) => {
+  const keyword = req.query.keyword || '';
   const count = Number(req.query.count) || 10;
   const page = Number(req.query.page) || 1;
   const skip = (page - 1) * count;
@@ -51,7 +52,14 @@ router.get('/get/userlist', async (req, res) => {
     .then(count => {
       data.total = count;
 
-      return User.find().limit(count).skip(skip).sort({
+      return User.find({
+        $or: [
+          { username: { $regex: keyword } },
+          { tel: { $regex: keyword } }
+        ]
+      }, {
+        password: 0
+      }).limit(count).skip(skip).sort({
         _id: -1
       });
     })
@@ -63,7 +71,6 @@ router.get('/get/userlist', async (req, res) => {
       res.json(data);
     })
     .catch(error => console.log(error));
-
 })
 
 /**

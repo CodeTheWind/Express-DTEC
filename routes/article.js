@@ -1,7 +1,7 @@
 const express = require('express');
 const Article = require('../models/Article');
-const Category = require('../models/Category');
 const Comment = require('../models/Comment');
+const Collection = require('../models/Collection');
 const localDate = require('../utils/getCurrentDate');
 
 const router = express.Router();
@@ -21,7 +21,7 @@ router.use((req, res, next) => {
  */
 router.get('/get/list', async (req, res) => {
   const keyword = req.query.keyword || '';   // 搜索关键字
-  const typeId = req.query.typeId || 0;      // 分类id
+  const category = req.query.category || 0;      // 分类id
   const count = Number(req.query.count) || 10;       // 每页显示的条数
   const page = Number(req.query.page) || 1;          // 页数
   const skip = (page - 1) * count;           // 查询时忽略的条数
@@ -30,7 +30,7 @@ router.get('/get/list', async (req, res) => {
     data.total = count;
   });
 
-  if (typeId == 0) {
+  if (category == 0) {
     Article.find({ title: { $regex: keyword } }).limit(count).skip(skip)
       .populate([
         { path: 'author', select: 'username' },
@@ -54,31 +54,28 @@ router.get('/get/list', async (req, res) => {
       })
 
   } else {
-    Category.findOne({ typeId }).then(category => {
-      const id = category._id;
-      data.msg = category.typeName;
 
-      return Article.find({ category: id, title: { $regex: keyword } }).limit(count).skip(skip)
-        .populate([
-          { path: 'author', select: 'username' },
-          { path: "category", select: ['typeId', 'typeName'] }
-        ]).sort({
-          _id: -1
-        });
-    }).then(articles => {
-      data.msg += '文章列表';
+    Article.find({ title: { $regex: keyword }, category }).limit(count).skip(skip)
+      .populate([
+        { path: 'author', select: 'username' },
+        { path: "category", select: ['typeId', 'typeName'] }
+      ]).sort({
+        _id: -1
+      }).then(articles => {
+        data.msg = '全部文章列表';
 
-      articles.forEach(item => {
-        item.comments = undefined;
-        item.content = undefined;
+        articles.forEach(item => {
+          item.comments = undefined;
+          item.content = undefined;
+        })
+
+        data.data = articles;
+
+      }).then(() => {
+        res.json(data);
+      }).catch(error => {
+        console.log(error);
       })
-
-      data.data = articles;
-    }).then(() => {
-      res.json(data);
-    }).catch(error => {
-      console.log(error);
-    })
   }
 })
 
@@ -128,26 +125,27 @@ router.get('/get/list/:listType', async (req, res) => {
     // 某一用户发布的文章
     case 'user':
       if (author) {
-        Article.find({ author }).sort({ _id: -1 }).then(articles => {
+        Article.find({ author }).populate('category')
+          .sort({ _id: -1 }).then(articles => {
 
-          if (articles.length > 0) {
-            data.msg = author;
-            data.state = 200;
+            if (articles.length > 0) {
+              data.msg = author;
+              data.state = 200;
 
-            articles.forEach(item => {
-              item.content = undefined;
-            });
-            data.data = articles;
-            res.json(data);
-          } else {
-            data.msg = '该用户没有发布过文章或该用户不存在！';
-            data.state = 404;
-            data.data = [];
-            res.json(data);
-          }
-        }).catch(error => {
-          console.log(error);
-        })
+              articles.forEach(item => {
+                item.content = undefined;
+              });
+              data.data = articles;
+              res.json(data);
+            } else {
+              data.msg = '该用户没有发布过文章或该用户不存在！';
+              data.state = 404;
+              data.data = [];
+              res.json(data);
+            }
+          }).catch(error => {
+            console.log(error);
+          })
       } else {
         data.msg = '未传入用户的id';
         data.state = 404;
@@ -379,6 +377,71 @@ router.post('/delete', async (req, res) => {
   })
 })
 
+/**
+ * 收藏文章
+ */
+router.post('/add/collection', async (req, res) => {
+  const user = req.cookies.userIds;
+  const article = req.body.ids;
+
+  Collection.findOne({ user, article }).then(collection => {
+
+    if (collection) {
+      data.msg = '你已经收藏过该文章了！';
+      data.state = 202;
+      return;
+    } else {
+      return new Collection({ user, article }).save();
+    }
+  }).then(collection => {
+    if (collection) {
+      data.msg = '收藏成功！';
+    }
+    res.json(data);
+  })
+})
+
+/**
+ * 取消收藏文章
+ */
+router.post('/cancel/collection', async (req, res) => {
+  const id = req.body.ids;
+
+  Collection.deleteOne({ _id: id }).then(res => {
+    console.log(res);
+
+    if (res) {
+      data.msg = '取消收藏成功！';
+      data.state = 200;
+    } else {
+      data.state = 202;
+    }
+  }).then(() => {
+    res.json(data);
+  })
+})
+
+/**
+ * 用户的收藏列表
+ */
+router.get('/get/collections', async (req, res) => {
+  const user = req.query.ids;
+
+  Collection.find({ user }).populate([
+    {
+      path: 'article',
+      populate:
+        [
+          { path: 'author', select: 'username' },
+          { path: 'category', select: 'typeName' }
+        ]
+    }
+  ]).then(collections => {
+    data.msg = '用户收藏列表';
+    data.data = collections;
+    res.json(data);
+  })
+})
 
 
 module.exports = router;
