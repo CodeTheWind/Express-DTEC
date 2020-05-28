@@ -6,18 +6,12 @@ const localDate = require('../utils/getCurrentDate');
 const router = express.Router();
 
 let data;
-
 router.use((req, res, next) => {
-  data = {
-    msg: '',
-    state: 0,
-  }
+  data = { msg: '', state: 0 }
   next();
 })
 
-/**
- * 用户注册
- */
+// 用户注册
 router.post('/register', async (req, res) => {
   const password = req.body.password;
   const tel = req.body.tel;
@@ -47,9 +41,7 @@ router.post('/register', async (req, res) => {
   });
 })
 
-/**
- * 用户登录
- */
+// 用户登录
 router.post('/login', async (req, res) => {
   const tel = req.body.tel;
   const password = req.body.password;
@@ -81,9 +73,7 @@ router.post('/login', async (req, res) => {
   })
 })
 
-/**
- * 退出登录
- */
+// 退出登录
 router.post('/logout', async (req, res) => {
   if (req.cookies.userIds) {
     data.msg = '退出成功！';
@@ -96,9 +86,7 @@ router.post('/logout', async (req, res) => {
   }
 })
 
-/**
- * 获取当前登录人的资料
- */
+// 获取当前登录人的资料
 router.get('/get/personaldata', async (req, res) => {
   if (req.cookies.userIds) {
     User.findOne({ _id: req.cookies.userIds }).then(res => {
@@ -116,9 +104,7 @@ router.get('/get/personaldata', async (req, res) => {
   }
 })
 
-/**
- * 获取用户资料
- */
+// 获取用户资料
 router.get('/get/data', async (req, res) => {
   const ids = req.query.ids;
   const userIds = req.cookies.userIds;
@@ -163,9 +149,7 @@ router.get('/get/data', async (req, res) => {
   })
 })
 
-/**
- * 修改个人资料
- */
+// 修改个人资料
 router.post('/update/data', async (req, res) => {
   const userIds = req.cookies.userIds;
   const username = req.body.username;
@@ -194,9 +178,7 @@ router.post('/update/data', async (req, res) => {
   }
 })
 
-/**
- * 修改用户头像
- */
+// 修改用户头像
 router.post('/update/avatar', async (req, res) => {
   const userIds = req.cookies.userIds;
   const avatar = req.body.avatar;
@@ -221,9 +203,7 @@ router.post('/update/avatar', async (req, res) => {
   }
 })
 
-/**
- * 修改密码
- */
+// 修改密码
 router.post('/update/password', async (req, res) => {
   const userIds = req.cookies.userIds;
   const oldPassword = req.body.oldPassword;
@@ -250,7 +230,6 @@ router.post('/update/password', async (req, res) => {
     res.json(data);
   }
 })
-
 
 
 module.exports = router;

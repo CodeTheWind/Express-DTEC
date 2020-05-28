@@ -16,9 +16,7 @@ router.use((req, res, next) => {
   next();
 })
 
-/**
- * 获取文章列表
- */
+// 获取文章列表
 router.get('/get/list', async (req, res) => {
   const keyword = req.query.keyword || '';   // 搜索关键字
   const category = req.query.category || 0;      // 分类id
@@ -79,9 +77,7 @@ router.get('/get/list', async (req, res) => {
   }
 })
 
-/**
- * 获取特殊文章列表 - 动态路由
- */
+// 获取特殊文章列表 - 动态路由
 router.get('/get/list/:listType', async (req, res) => {
   const count = req.query.count || 7;
   const author = req.query.ids;
@@ -160,9 +156,7 @@ router.get('/get/list/:listType', async (req, res) => {
   }
 })
 
-/**
- * 获取文章详情
- */
+// 获取文章详情
 router.get('/get/details', async (req, res) => {
   const ids = req.query.ids;
 
@@ -189,9 +183,7 @@ router.get('/get/details', async (req, res) => {
     })
 })
 
-/**
- * 获取文章评论
- */
+// 获取文章评论
 router.get('/get/comments', async (req, res) => {
   const ids = req.query.ids;
 
@@ -220,9 +212,7 @@ router.get('/get/comments', async (req, res) => {
   })
 })
 
-/**
- * 评论文章
- */
+// 评论文章
 router.post('/add/comment', async (req, res) => {
   const article = req.body.ids;
   const user = req.cookies.userIds;
@@ -253,9 +243,7 @@ router.post('/add/comment', async (req, res) => {
   }
 })
 
-/**
- * 点赞文章
- */
+// 点赞文章
 router.post('/update/likes', async (req, res) => {
   const ids = req.body.ids;
 
@@ -271,9 +259,7 @@ router.post('/update/likes', async (req, res) => {
   })
 })
 
-/**
- * 发表文章
- */
+// 发表文章
 router.post('/add', async (req, res) => {
   const userIds = req.cookies.userIds;
 
@@ -291,7 +277,6 @@ router.post('/add', async (req, res) => {
         data.msg = '发表成功！';
         data.state = 200;
         data.articleIds = article._id;
-
         res.json(data);
       }).catch(error => {
         console.log(error);
@@ -308,9 +293,7 @@ router.post('/add', async (req, res) => {
   }
 })
 
-/**
- * 用户修改文章
- */
+// 用户修改文章
 router.post('/update', async (req, res) => {
   const author = req.cookies.userIds;
   const ids = req.body.ids;
@@ -357,9 +340,7 @@ router.post('/update', async (req, res) => {
   }
 })
 
-/**
- * 用户删除文章
- */
+// 用户删除文章
 router.post('/delete', async (req, res) => {
   const ids = req.body.ids;
 
@@ -377,9 +358,7 @@ router.post('/delete', async (req, res) => {
   })
 })
 
-/**
- * 收藏文章
- */
+// 收藏文章
 router.post('/add/collection', async (req, res) => {
   const user = req.cookies.userIds;
   const article = req.body.ids;
@@ -401,9 +380,7 @@ router.post('/add/collection', async (req, res) => {
   })
 })
 
-/**
- * 取消收藏文章
- */
+// 取消收藏文章
 router.post('/cancel/collection', async (req, res) => {
   const id = req.body.ids;
 
@@ -421,9 +398,7 @@ router.post('/cancel/collection', async (req, res) => {
   })
 })
 
-/**
- * 用户的收藏列表
- */
+// 用户的收藏列表
 router.get('/get/collections', async (req, res) => {
   const user = req.query.ids;
 
